@@ -1,11 +1,11 @@
 package utils.futures
 
+import io.github.rtmigo.later.*
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.booleans.*
 import io.kotest.matchers.shouldBe
 //import kotlinx.coroutines.*
 import org.junit.jupiter.api.Test
-import utils.*
 import java.lang.Thread.sleep
 import kotlin.concurrent.thread
 

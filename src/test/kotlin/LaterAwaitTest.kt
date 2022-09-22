@@ -1,8 +1,8 @@
 package utils.syncfuture
 
+import io.github.rtmigo.later.*
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.*
-import utils.*
 import java.lang.Thread.sleep
 import kotlin.concurrent.thread
 import kotlin.random.Random

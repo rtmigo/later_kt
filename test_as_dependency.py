@@ -52,7 +52,8 @@ with TempProject(
 
     app.print_files()
     app.run([os.path.abspath("gradlew"), "clean"]) # , "-q"
-    result = app.run([os.path.abspath("gradlew"), "run", "-q"]) # , "-q"
+    app.run([os.path.abspath("gradlew"), "build"]) # , "-q"
+    result = app.run([os.path.abspath("gradlew"), "run"]) # , "-q"
 
     print("returncode", result.returncode)
 

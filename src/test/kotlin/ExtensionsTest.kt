@@ -1,8 +1,8 @@
 package utils.syncfuture
 
+import io.github.rtmigo.later.*
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
-import utils.*
 
 class ExtensionsTest {
     @Test
