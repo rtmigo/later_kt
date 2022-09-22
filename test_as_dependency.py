@@ -68,3 +68,4 @@ with TempProject(
     assert result.stdout == "Am I late?\n", result.stdout
 
 print("Everything is OK!")
+
