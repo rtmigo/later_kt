@@ -1,4 +1,4 @@
-![Generic badge](https://img.shields.io/badge/maturity-wip-red.svg)
+![Generic badge](https://img.shields.io/badge/maturity-wip-experimental.svg)
 ![Generic badge](https://img.shields.io/badge/JVM-8-blue.svg)
 
 # [later](https://github.com/rtmigo/later_kt)
@@ -20,9 +20,8 @@ in Kotlin, [Future](https://api.dart.dev/be/175791/dart-async/Future-class.html)
 in Dart,
 [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
 in JS. But unlike them, `Later` is extremely simple: it does not mess with
-coroutines, threads, task queues ot centralized loops. `Later` is just runs
+coroutines, threads, task queues ot centralized loops. `Later` just runs
 synchronous callback functions.
-
 
 
 # Install
@@ -125,5 +124,3 @@ println(a.value)  // 5
 println(b.value)  // The number is 5
 println(c.value)  // THE NUMBER IS 5!
 ```
-
-
