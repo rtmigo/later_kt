@@ -1,4 +1,4 @@
-import sys
+import sys, os
 from pathlib import Path
 
 from tempp import *
@@ -27,7 +27,7 @@ with TempProject(
                 plugins {
                     id("application")
                     kotlin("jvm") version "1.6.20"
-                    java // needed?
+                    //java // needed?
                 }
 
                 repositories { mavenCentral() }
@@ -51,7 +51,8 @@ with TempProject(
             "src/main/kotlin/Main.kt": code}) as app:
 
     app.print_files()
-    result = app.run([Path(__file__).parent/"gradlew", "run", "-q"]) # , "-q"
+    app.run([os.path.abspath("gradlew"), "clean"]) # , "-q"
+    result = app.run([os.path.abspath("gradlew"), "run", "-q"]) # , "-q"
 
     print("returncode", result.returncode)
 
