@@ -42,7 +42,7 @@ tasks.register("updateReadmeVersion") {
         // найдем что-то вроде "io.github.rtmigo:lib:0.0.1"
         // и поменяем на актуальную версию
         val readmeFile = project.rootDir.resolve("README.md")
-        val prefixToFind = "io.github.rtmigo:LIBNAME:"
+        val prefixToFind = "io.github.rtmigo:later:"
         val regex = """(?<=${Regex.escape(prefixToFind)})[0-9\.+]+""".toRegex()
         val oldText = readmeFile.readText()
         val newText = regex.replace(oldText, project.version.toString())

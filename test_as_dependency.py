@@ -1,13 +1,14 @@
 import sys
+from pathlib import Path
 
 from tempp import *
 
-module="io.github.rtmigo:LIBNAME"
+module="io.github.rtmigo:later"
 
-url="https://github.com/rtmigo/LIBNAME"
+url="https://github.com/rtmigo/later_kt"
 
 code="""
-    import io.github.rtmigo.LIBNAME.*
+    import io.github.rtmigo.later.*
 
     fun main() {
         println("Hi!".asLater())
@@ -49,7 +50,7 @@ with TempProject(
             "src/main/kotlin/Main.kt": code}) as app:
 
     app.print_files()
-    result = app.run(["gradle", "run", "-q"])
+    result = app.run([Path(__file__).parent/"gradlew", "run", "-q"])
 
     print("returncode", result.returncode)
 
