@@ -3,7 +3,7 @@
 
 # [later](https://github.com/rtmigo/later_kt)
 
-A `Later` is used to represent a potential value, that will be available at some
+A `Later` represents a potential value, that will be available at some
 time in the future.
 
 It can only already contain a value, or not yet contain one.
@@ -21,7 +21,7 @@ in Dart,
 [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
 in JS. But unlike them, `Later` is extremely simple: it does not mess with
 coroutines, threads, task queues ot centralized loops. `Later` just runs
-synchronous callback functions.
+synchronous callback functions (but in thread-safe manner:).
 
 
 # Install
@@ -52,22 +52,17 @@ dependencies {
 import io.github.rtmigo.later.*
 
 fun slowComputation(x: Int): Later<Int> {
-    // This function returns Later<Int> object immediately.
-    // It also starts a thread, that will assing value to the
-    // result a second later
-    
     val result = mutableLater<Int>()
-    
     thread {
+        // one second later assign value to the returned object
         sleep(1000)
-        result.value = x * 2  // assign value to a returned object 
+        result.value = x * 2   
     }
-    
     return result  // return immediately
 }
 
 fun main() {
-    // print "16" with one second delay
+    // print "16" after one second
     println(slowComputation(8).await()) 
 }
 ```
@@ -103,7 +98,7 @@ a.onValue { println("Is $it great?!") }
 a.value = "Britain"
 
 // What is Britain?
-// What Britain great?
+// Is Britain great?
 ```
 # Mapping
 
