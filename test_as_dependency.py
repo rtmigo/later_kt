@@ -1,5 +1,5 @@
 import shutil
-import sys, os
+import sys
 from pathlib import Path
 
 from tempp import *
@@ -12,7 +12,7 @@ code = """
     import io.github.rtmigo.later.*
 
     fun main() {
-        println("Hi!".asLater())
+        println("Am I late?".asLater().await())
     }
 """
 
@@ -28,7 +28,6 @@ with TempProject(
                 plugins {
                     id("application")
                     kotlin("jvm") version "1.6.20"
-                    //java // needed?
                 }
 
                 repositories { mavenCentral() }
@@ -54,10 +53,7 @@ with TempProject(
 
     shutil.copytree(Path(__file__).parent/"gradle", app.project_dir/"gradle")
     shutil.copy(Path(__file__).parent/"gradlew", app.project_dir/"gradlew")
-
-    #pp.run([app.project_dir/"gradlew", "clean"])  # , "-q"
-    #app.run([app.project_dir/"gradlew", "build"])  # , "-q"
-    result = app.run([app.project_dir/"gradlew", "run"])  # , "-q"
+    result = app.run([app.project_dir/"gradlew", "run", "-q"])
 
     print("returncode", result.returncode)
 
@@ -69,6 +65,6 @@ with TempProject(
     print("-" * 80)
 
     assert result.returncode == 0
-    assert result.stdout == "3.0\n", result.stdout
+    assert result.stdout == "Am I late?\n", result.stdout
 
 print("Everything is OK!")
