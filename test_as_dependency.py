@@ -1,13 +1,14 @@
+import shutil
 import sys, os
 from pathlib import Path
 
 from tempp import *
 
-module="io.github.rtmigo:later"
+module = "io.github.rtmigo:later"
 
-url="https://github.com/rtmigo/later_kt.git"
+url = "https://github.com/rtmigo/later_kt.git"
 
-code="""
+code = """
     import io.github.rtmigo.later.*
 
     fun main() {
@@ -49,20 +50,23 @@ with TempProject(
 
             # kotlin code that imports and uses the library
             "src/main/kotlin/Main.kt": code}) as app:
-
     app.print_files()
-    app.run([os.path.abspath("gradlew"), "clean"]) # , "-q"
-    app.run([os.path.abspath("gradlew"), "build"]) # , "-q"
-    result = app.run([os.path.abspath("gradlew"), "run"]) # , "-q"
+
+    shutil.copytree(Path(__file__).parent/"gradle", app.project_dir/"gradle")
+    shutil.copy(Path(__file__).parent/"gradlew", app.project_dir/"gradlew")
+
+    #pp.run([app.project_dir/"gradlew", "clean"])  # , "-q"
+    #app.run([app.project_dir/"gradlew", "build"])  # , "-q"
+    result = app.run([app.project_dir/"gradlew", "run"])  # , "-q"
 
     print("returncode", result.returncode)
 
-    print("stderr", "-"*80)
+    print("stderr", "-" * 80)
     print(result.stderr)
 
-    print("stdout", "-"*80)
+    print("stdout", "-" * 80)
     print(result.stdout)
-    print("-"*80)
+    print("-" * 80)
 
     assert result.returncode == 0
     assert result.stdout == "3.0\n", result.stdout

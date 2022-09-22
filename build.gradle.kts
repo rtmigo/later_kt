@@ -53,7 +53,7 @@ tasks.register("updateReadmeVersion") {
 }
 
 tasks.build {
-    dependsOn("updateReadmeVersion")
+    //dependsOn("updateReadmeVersion")
 }
 
 
