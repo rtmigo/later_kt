@@ -8,11 +8,11 @@ time in the future.
 
 It can only already contain a value, or not yet contain one.
 
-- `later.isComplete` will return `true`, if we have the value.
+- `later.isComplete` will return `true`, if we have the value
 
 - `later.value` will return a value, or throw if we don't have it yet
 
-- `later.await()` will block and wait until the value is assigned somehow
+- `later.await()` will block and wait until the value is assigned 
 
 The object is somewhat similar to
 [Deferred](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-deferred/)
@@ -74,20 +74,12 @@ fun main() {
 val a = mutableLater<String>()
 a.onValue { println("What is $it?!") }
 
-// print "What is love?!"
-a.value = "love"   
+// assigning the value will trigger the callback
+a.value = "love"
 ```
 
-We don't actually need a meaningful value, when all we need is calling a callback.
+> What is love?!
 
-```kotlin
-// init
-val kindaEvent = mutableLater<Unit>()
-kindaEvent.onValue { println("Kinda callback") }
-
-// print "Kinda callback"
-kindaEvent.value = Unit
-```
 
 We also can set multiple callbacks for the same `Later`.
 
@@ -96,10 +88,25 @@ val a = mutableLater<String>()
 a.onValue { println("What is $it?!") }
 a.onValue { println("Is $it great?!") }
 a.value = "Britain"
-
-// What is Britain?
-// Is Britain great?
 ```
+
+> What is Britain?
+> 
+> Is Britain great?
+
+
+We don't actually need a meaningful value, when all we need is calling a callback.
+
+```kotlin
+val kindaEvent = mutableLater<Unit>()
+kindaEvent.onValue { println("Kinda callback") }
+
+kindaEvent.value = Unit
+```
+
+> Kinda callback
+
+
 # Mapping
 
 Without having a calculated value ready, we can specify future transformations
