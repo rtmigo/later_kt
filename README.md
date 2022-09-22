@@ -76,9 +76,9 @@ a.onValue { println("What is $it?!") }
 
 // assigning the value will trigger the callback
 a.value = "love"
-```
 
-> What is love?!
+// What is love?!
+```
 
 
 We also can set multiple callbacks for the same `Later`.
@@ -88,11 +88,11 @@ val a = mutableLater<String>()
 a.onValue { println("What is $it?!") }
 a.onValue { println("Is $it great?!") }
 a.value = "Britain"
+
+// What is Britain?
+// Is Britain great? 
 ```
 
-> What is Britain?
-> 
-> Is Britain great?
 
 
 We don't actually need a meaningful value, when all we need is calling a callback.
@@ -102,10 +102,9 @@ val kindaEvent = mutableLater<Unit>()
 kindaEvent.onValue { println("Kinda callback") }
 
 kindaEvent.value = Unit
+
+// Kinda callback
 ```
-
-> Kinda callback
-
 
 # Mapping
 
