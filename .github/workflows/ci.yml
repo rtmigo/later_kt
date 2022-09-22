@@ -122,7 +122,7 @@ jobs:
 #          python test_as_dependency.py dev
 
   to-github-release:
-    needs: [ integration-test-dev ]
+    needs: [ to-staging, publish-flag ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
