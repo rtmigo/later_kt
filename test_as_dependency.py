@@ -27,6 +27,7 @@ with TempProject(
                 plugins {
                     id("application")
                     kotlin("jvm") version "1.6.20"
+                    java // needed?
                 }
 
                 repositories { mavenCentral() }
