@@ -54,6 +54,10 @@ jobs:
           distribution: 'adopt'
           cache: gradle
 
+      - name: Warm up gradle
+        # so it will not show "..........10%.." when called again
+        run: ./gradlew pkgver -q
+
       - name: Set up Python 3.10
         uses: actions/setup-python@v2
         with:
@@ -131,7 +135,7 @@ jobs:
 
       - name: Build binaries (with testing)
         run: |
-          ./gradlew build
+          ./gradlew build --no-daemon
 
       # ADD GITHUB RELEASE
       - name: Warm up gradle

@@ -53,7 +53,7 @@ with TempProject(
 
     shutil.copytree(Path(__file__).parent/"gradle", app.project_dir/"gradle")
     shutil.copy(Path(__file__).parent/"gradlew", app.project_dir/"gradlew")
-    result = app.run([app.project_dir/"gradlew", "run", "-q"])
+    result = app.run([app.project_dir/"gradlew", "run", "--no-daemon", "-q"])
 
     print("returncode", result.returncode)
 
