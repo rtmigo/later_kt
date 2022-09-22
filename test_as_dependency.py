@@ -5,7 +5,7 @@ from tempp import *
 
 module="io.github.rtmigo:later"
 
-url="https://github.com/rtmigo/later_kt"
+url="https://github.com/rtmigo/later_kt.git"
 
 code="""
     import io.github.rtmigo.later.*
@@ -41,7 +41,7 @@ with TempProject(
             # additional settings, if necessary
             "settings.gradle.kts": """
                 sourceControl {
-                    gitRepository(java.net.URI("__URL__.git")) {
+                    gitRepository(java.net.URI("__URL__")) { // # .git
                         producesModule("__MODULE__")
                     }
                 }
@@ -51,7 +51,7 @@ with TempProject(
             "src/main/kotlin/Main.kt": code}) as app:
 
     app.print_files()
-    result = app.run([Path(__file__).parent/"gradlew", "run", "-q"])
+    result = app.run([Path(__file__).parent/"gradlew", "run", "-q"]) # , "-q"
 
     print("returncode", result.returncode)
 
