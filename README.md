@@ -165,5 +165,3 @@ println(c.value)  // THE NUMBER IS 5!
 Copyright © 2022 Artyom IG <github.com/rtmigo>
 
 Licensed under the [MIT License](LICENSE)
-
-:)
