@@ -8,23 +8,22 @@
 A `Later` represents a potential value, that will be available at some
 time in the future.
 
-It can only already contain a value, or not yet contain one.
-
 - `later.isComplete` will return `true`, if we have the value
 
-- `later.value` will return a value, or throw if we don't have it yet
+- `later.value` will return a value, or throw if we do not have it yet
 
-- `later.await()` will block and wait until the value is assigned 
+- `later.await()` will block and wait until the value is set 
 
 The object is somewhat similar to
 [Deferred](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-deferred/)
 in Kotlin, [Future](https://api.dart.dev/be/175791/dart-async/Future-class.html)
 in Dart,
 [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
-in JS. But unlike them, `Later` is extremely simple: it does not mess with
-coroutines, threads, task queues ot centralized loops. `Later` just runs
-synchronous callback functions in thread-safe manner.
+in JS. 
 
+But `Later` does not provide concurrency or task queuing. It just fires
+callbacks as lightly as possible while being thread safe.
+ 
 
 # Install
 
