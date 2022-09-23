@@ -10,6 +10,7 @@ import java.lang.Thread.sleep
 import kotlin.concurrent.thread
 import kotlin.random.Random
 
+@OptIn(Experimental::class)
 @Tag("slow")
 @Timeout(2)
 class ThreadedOnCompleteTest {

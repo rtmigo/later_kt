@@ -1,5 +1,4 @@
-![Generic badge](https://img.shields.io/badge/maturity-experimental-red.svg)
-![Generic badge](https://img.shields.io/badge/Kotlin-1.6-blue.svg)
+![Generic badge](https://img.shields.io/badge/Kotlin-1.7-blue.svg)
 ![Generic badge](https://img.shields.io/badge/JVM-8-blue.svg)
 
 

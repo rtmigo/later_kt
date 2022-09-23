@@ -3,11 +3,17 @@
  * SPDX-License-Identifier: MIT
  **/
 
+@file:OptIn(Experimental::class)
+
 package io.github.rtmigo.later
+
 
 import java.util.concurrent.locks.*
 import kotlin.concurrent.withLock
 import kotlin.random.Random
+
+@RequiresOptIn
+annotation class Experimental
 
 class LaterCompletedException : IllegalStateException()
 class LaterUncompletedException : IllegalStateException()
@@ -16,6 +22,7 @@ class LaterUncompletedException : IllegalStateException()
  * Represents a potential value, that will be available at some
  * time in the future.
  **/
+@io.github.rtmigo.later.Experimental
 interface Later<T> {
     /** Returns the value, if it is available.
      *
@@ -80,7 +87,7 @@ fun <T> later(v: T): Later<T> = LaterImpl<T>(_value = v, _isComplete = true)
 private typealias Listener = () -> Unit
 
 /**
- * Если установить в `true`, то [LaterImpl] (благодаря [LaterImpl.randomPauseForTesting]) будет
+ * Если установить в `true`, то [LaterImpl] (благодаря [LaterImpl.randomPauseIfTesting]) будет
  * делать случайные задержки, помогающие проявить проблемы синхронизации потоков.
  *
  * Это действует только в коде, где разрешены ассерты. В продакшн-коде просто не будет проверок
@@ -115,7 +122,7 @@ private class LaterImpl<T> constructor(
     private var awaitingLock: ReentrantLock? = null
     private var awaitingCondition: Condition? = null
 
-    private fun randomPauseForTesting(): Boolean {
+    private fun randomPauseIfTesting(): Boolean {
         // убедимся, что эта функция запускается только в отладочных билдах
 
         var assertionsEnabled = false
@@ -136,19 +143,19 @@ private class LaterImpl<T> constructor(
         if (isComplete)
             return this.value
         else {
-            assert(randomPauseForTesting())
+            assert(randomPauseIfTesting())
 
             synced {
-                assert(randomPauseForTesting())
+                assert(randomPauseIfTesting())
                 if (!isComplete && awaitingLock == null) {
                     awaitingLock = ReentrantLock()
-                    assert(randomPauseForTesting())
+                    assert(randomPauseIfTesting())
                     awaitingCondition = awaitingLock!!.newCondition()
                 }
-                assert(randomPauseForTesting())
+                assert(randomPauseIfTesting())
             }
 
-            assert(randomPauseForTesting())
+            assert(randomPauseIfTesting())
 
             // Здесь awaitingLock может по-прежнему быть null. Но только в случае, если в прошлом
             // синхроблоке мы обнаружили, что объект уже isComplete. Он уже не перестанет быть
@@ -156,7 +163,7 @@ private class LaterImpl<T> constructor(
             assert(isComplete || awaitingLock != null)
 
             awaitingLock?.withLock {
-                assert(randomPauseForTesting())
+                assert(randomPauseIfTesting())
                 // Есть риск, что перед нами в такой лок запрыгнул финализер. Тогда он там вызвал
                 // signalAll, и больше таких сигналов не будет. Запускать await уже поздно -
                 // зависнем.
@@ -169,13 +176,13 @@ private class LaterImpl<T> constructor(
                 else
                     this.awaitingCondition!!.await()
 
-                assert(randomPauseForTesting())
+                assert(randomPauseIfTesting())
             }
 
-            assert(randomPauseForTesting())
+            assert(randomPauseIfTesting())
         }
 
-        assert(randomPauseForTesting())
+        assert(randomPauseIfTesting())
 
         assert(this.isComplete)
         return this.value
@@ -219,13 +226,13 @@ private class LaterImpl<T> constructor(
                     this.isComplete = true
                     assert(this.areListenersImmediate)
 
-                    assert(randomPauseForTesting())
+                    assert(randomPauseIfTesting())
 
                     // Следующий лок мы устанавливаем в не-null в таком же synchronized-блоке.
                     // Значениям null и не-null можно верить. А после установки статуса
                     // isComplete, поле никогда больше не инициализируется в не-null.
                     this.awaitingLock?.withLock {
-                        assert(randomPauseForTesting())
+                        assert(randomPauseIfTesting())
 
                         this.awaitingCondition!!.signalAll()
 
@@ -234,10 +241,10 @@ private class LaterImpl<T> constructor(
                         // в таком же withLock
                         this.awaitingCondition = null
 
-                        assert(randomPauseForTesting())
+                        assert(randomPauseIfTesting())
                     }
 
-                    assert(randomPauseForTesting())
+                    assert(randomPauseIfTesting())
 
                     // Статус isComplete значит что с данного момента последующие вызовы onComplete
                     // уже не будут обновлять поле listeners.
@@ -255,7 +262,9 @@ private class LaterImpl<T> constructor(
                     // есть только у нас, и поэтому далее синхронизация списку необязательна
 
                     val prevListenersOrNull = this.listeners
+
                     this.listeners = null
+                    assert(randomPauseIfTesting())
 
                     prevListenersOrNull
                 } else

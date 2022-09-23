@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: MIT
  **/
 
+@file:OptIn(Experimental::class)
+
 import io.github.rtmigo.later.*
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.*
@@ -12,10 +14,10 @@ import kotlin.random.Random
 
 @Tag("slow")
 @Timeout(2)
-class TrreadedAwaitTest {
+class ThreadedAwaitTest {
     @RepeatedTest(50)
     fun awaitOneThread() {
-        val future = mutableLater<String>()
+        val future = Later.completable<String>()
         thread {
             sleep(Random.nextLong(50))
             future.value = "Done!"
@@ -26,7 +28,7 @@ class TrreadedAwaitTest {
 
     @RepeatedTest(10)
     fun awaitForCompleted() {
-        val future = mutableLater<String>()
+        val future = Later.completable<String>()
         future.value = "Done"
         repeat(3) {
             future.await().shouldBe("Done")
@@ -46,14 +48,14 @@ class TrreadedAwaitTest {
     }
 
 
-    fun awaitMultipleThreadsInner() {
-        val futureA: CompletableLater<Int> = mutableLater<Int>()
+    private fun awaitMultipleThreadsInner() {
+        val futureA: CompletableLater<Int> = Later.completable()
         val futureB: Later<String> = futureA.map { ("$it=$it").asLater() }
         val futureC: Later<String> = futureB.map { ("$it!").asLater() }
 
         val maxMs = 7L
         val maxRepeats = 3
-        val threadsNum = 20
+        val threadsNum = (1..31).random()
 
         val waitingThreads = (1..threadsNum).map {
             thread {
@@ -66,9 +68,10 @@ class TrreadedAwaitTest {
                         else -> throw Error()
                     }
                 }
-            } }
+            }
+        }
 
-        waitingThreads.size.shouldBe(threadsNum )
+        waitingThreads.size.shouldBe(threadsNum)
 
         thread {
             sleep(Random.nextLong(maxMs * maxRepeats))
