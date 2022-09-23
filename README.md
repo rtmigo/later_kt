@@ -8,21 +8,22 @@
 A `Later` represents a potential value, that will be available at some
 time in the future.
 
-- `later.isComplete` will return `true`, if we have the value
+- `later.isComplete` returns `true`, if we have the value
 
-- `later.value` will return a value, or throw if we do not have it yet
+- `later.value` returns a value, or throws if we do not have it yet
 
-- `later.await()` will block and wait until the value is set 
-
-The object is somewhat similar to
-[Deferred](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-deferred/)
-in Kotlin, [Future](https://api.dart.dev/be/175791/dart-async/Future-class.html)
-in Dart,
-[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
-in JS. 
+- `later.await()` waits until the value is set 
 
 But `Later` does not provide concurrency or task queuing. It just fires
 callbacks as lightly as possible while being thread safe.
+
+The object is somewhat similar to 
+[Deferred](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-deferred/), 
+[Future](https://api.dart.dev/be/175791/dart-async/Future-class.html) or
+[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
+ 
+
+
  
 
 # Install
@@ -160,4 +161,8 @@ println(b.value)  // The number is 5
 println(c.value)  // THE NUMBER IS 5!
 ```
 
+# License
 
+Copyright © 2022 Artyom IG <github.com/rtmigo>
+
+Licensed under the [MIT License](LICENSE).
