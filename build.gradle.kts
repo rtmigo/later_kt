@@ -71,14 +71,8 @@ val increaseBuildNum = tasks.register("increaseBuildNum") {
     }
 }
 
-//val githubBuild = tasks.register("githubBuild") {
-//    dependsOn(increaseBuildNum)
-//    doFirst {
-//        command
-//    }
-//}
-
-val pushToGithub = tasks.register("push") {
+val pushToGithub = tasks.register("stage") {
+    dependsOn(increaseBuildNum)
     doLast {
         exec {
             executable = "git"
@@ -96,6 +90,7 @@ val pushToGithub = tasks.register("push") {
             workingDir = project.rootDir
         }
     }
+    println("Pushed to Git with increased build num")
 }
 
 
