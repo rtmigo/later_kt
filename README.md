@@ -19,12 +19,8 @@ callbacks as lightly as possible while being thread safe.
 
 The object is somewhat similar to 
 [Deferred](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-deferred/), 
-[Future](https://api.dart.dev/be/175791/dart-async/Future-class.html) or
-[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
- 
-
-
- 
+[Future](https://api.dart.dev/be/175791/dart-async/Future-class.html) and
+[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise).
 
 # Install
 
@@ -165,4 +161,4 @@ println(c.value)  // THE NUMBER IS 5!
 
 Copyright © 2022 Artyom IG <github.com/rtmigo>
 
-Licensed under the [MIT License](LICENSE).
+Licensed under the [MIT License](LICENSE)

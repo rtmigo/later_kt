@@ -70,3 +70,4 @@ tasks.register<Jar>("uberJar") {
                  .map { zipTree(it) }
          })
 }
+
