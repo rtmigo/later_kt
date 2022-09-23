@@ -75,6 +75,7 @@ fun Task.pushToGithub(message: String = "Pushing from Gradle") {
         executable = "git"
         args("commit", "-m", message)
         workingDir = project.rootDir
+        isIgnoreExitValue = true
     }
     exec {
         executable = "git"
