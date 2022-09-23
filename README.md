@@ -23,7 +23,7 @@ in Dart,
 [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
 in JS. But unlike them, `Later` is extremely simple: it does not mess with
 coroutines, threads, task queues ot centralized loops. `Later` just runs
-synchronous callback functions (but in thread-safe manner:).
+synchronous callback functions in thread-safe manner.
 
 
 # Install
@@ -69,6 +69,34 @@ fun main() {
 }
 ```
 
+# Creating a Later
+
+`mutableLater<T>()` creates an object without `.value`. The value must be
+assigned later.
+
+```kotlin
+val a = mutableLater<Int>()
+assert(a.isComplete == false)
+// don't try reading a.value yet, it will throw
+
+a.value = 5
+
+assert(a.isComplete == true)
+assert(a.value == 5)
+```
+
+By calling `later(v)` or `v.asLater()` we create an immutable `Later`, with  
+`v` as value.
+
+```kotlin
+val c = later(7)
+
+assert(c.isComplete == true)
+assert(c.value == 7)
+```
+
+Such a wrapper is used, for example, as a result of `map` block.
+
 # Async callbacks
 
 ```kotlin
@@ -83,7 +111,7 @@ a.value = "love"
 ```
 
 
-We also can set multiple callbacks for the same `Later`.
+We can set multiple callbacks for the same `Later`.
 
 ```kotlin
 val a = mutableLater<String>()
@@ -95,9 +123,7 @@ a.value = "Britain"
 // Is Britain great? 
 ```
 
-
-
-We don't actually need a meaningful value, when all we need is calling a callback.
+We can use `Unit` as value if all we need is a callback.
 
 ```kotlin
 val kindaEvent = mutableLater<Unit>()
@@ -110,13 +136,14 @@ kindaEvent.value = Unit
 
 # Mapping
 
-Without having a calculated value ready, we can specify future transformations
-for this value.
+We can specify later transformations for a later value.
+
+`map` method receives the previous value and returns a new `Later`.
 
 ```kotlin
 val a = mutableLater<Int>()                         // a is MutableLater<Int>
 val b = a.map { "The number is $it".asLater() }     // b is Later<String>
-val c = b.map { it.uppercase()+"!" }                // c is Later<String>
+val c = b.map { (it.uppercase()+"!").asLater() }    // c is Later<String>
 
 // None of the objects have a value yet. Attempting to read `.value` 
 // will throw an exception. But we can assign value to `a`:
@@ -127,3 +154,5 @@ println(a.value)  // 5
 println(b.value)  // The number is 5
 println(c.value)  // THE NUMBER IS 5!
 ```
+
+
