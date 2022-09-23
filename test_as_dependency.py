@@ -27,7 +27,7 @@ with TempProject(
             "build.gradle.kts": """
                 plugins {
                     id("application")
-                    kotlin("jvm") version "1.6.20"
+                    kotlin("jvm") version "1.7.10"
                 }
 
                 repositories { mavenCentral() }
