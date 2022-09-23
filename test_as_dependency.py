@@ -10,6 +10,8 @@ url = "https://github.com/rtmigo/later_kt.git"
 
 code = """
     import io.github.rtmigo.later.*
+    
+    @OptIn(io.github.rtmigo.later.Experimental::class)
 
     fun main() {
         println("Am I late?".asLater().await())
