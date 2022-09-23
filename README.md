@@ -14,7 +14,7 @@ time in the future.
 
 - `later.await()` waits until the value is set 
 
-But `Later` does not provide concurrency or task queuing. It just fires
+The object does not provide concurrency or task queuing. It just fires
 callbacks as lightly as possible while being thread safe.
 
 - `later.onComplete { }` runs the block as soon as the value is set
