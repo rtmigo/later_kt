@@ -65,6 +65,40 @@ tasks.test {
 //    description 'run unit tests tagged with @Tag("slow") > 2 seconds'
 //}
 
+val increaseBuildNum = tasks.register("increaseBuildNum") {
+    project.rootDir.resolve(".github/staging_build_num.txt").let {
+        it.writeText((it.readText().toInt() + 1).toString())
+    }
+}
+
+//val githubBuild = tasks.register("githubBuild") {
+//    dependsOn(increaseBuildNum)
+//    doFirst {
+//        command
+//    }
+//}
+
+val pushToGithub = tasks.register("push") {
+    doLast {
+        exec {
+            executable = "git"
+            args("add", ".")
+            workingDir = project.rootDir
+        }
+        exec {
+            executable = "git"
+            args("commit", "-m", "Pushing from Gradle")
+            workingDir = project.rootDir
+        }
+        exec {
+            executable = "git"
+            args("commit", "push")
+            workingDir = project.rootDir
+        }
+    }
+}
+
+
 
 tasks.register("updateReadmeVersion") {
     doFirst {
