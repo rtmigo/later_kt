@@ -34,9 +34,37 @@ kotlin {
     }
 }
 
-tasks.test {
-    useJUnitPlatform()
+val fullTest = tasks.register<Test>("fullTest") {
+    useJUnitPlatform {
+        includeTags("slow")
+    }
+    dependsOn("test")
 }
+
+tasks.test {
+    useJUnitPlatform {
+        excludeTags("slow")
+    }
+}
+
+
+//task testFast(type: Test) {
+//    useJUnitPlatform {
+//        excludeTags 'slow'
+//    }
+//
+//    group 'verification'
+//    description 'run unit tests without @Tag("slow") < 2 seconds'
+//}
+//
+//test {
+//    useJUnitPlatform {
+//        includeTags 'slow'
+//    }
+//
+//    description 'run unit tests tagged with @Tag("slow") > 2 seconds'
+//}
+
 
 tasks.register("updateReadmeVersion") {
     doFirst {
@@ -47,19 +75,20 @@ tasks.register("updateReadmeVersion") {
         val regex = """(?<=${Regex.escape(prefixToFind)})[0-9\.+]+""".toRegex()
         val oldText = readmeFile.readText()
         val newText = regex.replace(oldText, project.version.toString())
-        if (newText!=oldText)
+        if (newText != oldText)
             readmeFile.writeText(newText)
     }
 }
 
 tasks.build {
     dependsOn("updateReadmeVersion")
+    //dependsOn(fullTest)
 }
 
 
 tasks.register<Jar>("uberJar") {
     archiveClassifier.set("uber")
-    duplicatesStrategy = org.gradle.api.file.DuplicatesStrategy.INCLUDE
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
     from(sourceSets.main.get().output)
 

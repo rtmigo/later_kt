@@ -10,8 +10,9 @@ import java.lang.Thread.sleep
 import kotlin.concurrent.thread
 import kotlin.random.Random
 
+@Tag("slow")
 @Timeout(2)
-class AwaitTest {
+class TrreadedAwaitTest {
     @RepeatedTest(50)
     fun awaitOneThread() {
         val future = mutableLater<String>()
