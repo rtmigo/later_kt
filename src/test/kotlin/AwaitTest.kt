@@ -46,7 +46,7 @@ class AwaitTest {
 
 
     fun awaitMultipleThreadsInner() {
-        val futureA: MutableLater<Int> = mutableLater<Int>()
+        val futureA: CompletableLater<Int> = mutableLater<Int>()
         val futureB: Later<String> = futureA.map { ("$it=$it").asLater() }
         val futureC: Later<String> = futureB.map { ("$it!").asLater() }
 

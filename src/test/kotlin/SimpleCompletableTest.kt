@@ -7,19 +7,17 @@ import org.junit.jupiter.api.Test
 
 class SimpleCompletableTest {
     @Test
-    fun simpleComplete() {
-        val c = mutableLater<Int>()
+    fun completeCompletable() {
+        val c = Later.completable<Int>()
         c.isComplete.shouldBeFalse()
         c.value = 5
         c.isComplete.shouldBeTrue()
         c.value.shouldBe(5)
     }
 
-
-
     @Test
     fun cannotCompleteTwice() {
-        val c = mutableLater<Int>()
+        val c = Later.completable<Int>()
         c.value = 5
         shouldThrow<LaterCompletedException> {
             c.value = 5
@@ -28,13 +26,13 @@ class SimpleCompletableTest {
     }
 
     @Test
-    fun whenComplete() {
-        val future = mutableLater<String>()
+    fun completableOnComplete() {
+        val future = Later.completable<String>()
         var callsA = 0
         var callsB = 0
 
-        future.thenApply { callsA ++ }
-        future.thenApply { callsB ++ }
+        future.onComplete { callsA ++ }
+        future.onComplete { callsB ++ }
         callsA.shouldBe(0)
         callsB.shouldBe(0)
 
@@ -46,7 +44,7 @@ class SimpleCompletableTest {
         // Теперь будущее завершено, но вызывать whenComplete можно.
         // Оно посто выполнится моментально.
         var callsC = 0
-        future.thenApply { callsC ++ }
+        future.onComplete { callsC ++ }
         callsA.shouldBe(1)
         callsB.shouldBe(1)
         callsC.shouldBe(1)

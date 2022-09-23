@@ -54,7 +54,7 @@ dependencies {
 import io.github.rtmigo.later.*
 
 fun slowComputation(x: Int): Later<Int> {
-    val result = mutableLater<Int>()
+    val result = Later.completable<Int>()
     thread {
         // one second later assign value to the returned object
         sleep(1000)
@@ -72,12 +72,11 @@ fun main() {
 # Creating a Later
 
 `mutableLater<T>()` creates an object without `.value`. The value must be
-assigned later.
+assigned before it can be read.
 
 ```kotlin
-val a = mutableLater<Int>()
+val a = Later.completable<Int>()
 assert(a.isComplete == false)
-// don't try reading a.value yet, it will throw
 
 a.value = 5
 
@@ -85,24 +84,22 @@ assert(a.isComplete == true)
 assert(a.value == 5)
 ```
 
-By calling `later(v)` or `v.asLater()` we create an immutable `Later`, with  
-`v` as value.
+By calling `Later.value(v)` or `v.asLater()` we create an immutable `Later`, 
+with `v` as value.
 
 ```kotlin
-val c = later(7)
+val c = Later.value(7)
 
 assert(c.isComplete == true)
 assert(c.value == 7)
 ```
 
-Such a wrapper is used, for example, as a result of `map` block.
-
 # Async callbacks
 
 ```kotlin
 // init
-val a = mutableLater<String>()
-a.onValue { println("What is $it?!") }
+val a = Later.completable<String>()
+a.onComplete { println("What is $it?!") }
 
 // assigning the value will trigger the callback
 a.value = "love"
@@ -110,24 +107,33 @@ a.value = "love"
 // What is love?!
 ```
 
-
 We can set multiple callbacks for the same `Later`.
 
 ```kotlin
-val a = mutableLater<String>()
-a.onValue { println("What is $it?!") }
-a.onValue { println("Is $it great?!") }
+val a = Later.completable<String>()
+a.onComplete { println("What is $it?!") }
+a.onComplete { println("Is $it great?!") }
 a.value = "Britain"
 
 // What is Britain?
 // Is Britain great? 
 ```
 
+When value is already set, callbacks are run immediately.
+
+```kotlin
+val iam = Later.value("Groot")
+
+a.onComplete { println("You are $it") }
+
+// You are Groot
+```
+
 We can use `Unit` as value if all we need is a callback.
 
 ```kotlin
 val kindaEvent = mutableLater<Unit>()
-kindaEvent.onValue { println("Kinda callback") }
+kindaEvent.onComplete { println("Kinda callback") }
 
 kindaEvent.value = Unit
 
@@ -141,9 +147,9 @@ We can specify later transformations for a later value.
 `map` method receives the previous value and returns a new `Later`.
 
 ```kotlin
-val a = mutableLater<Int>()                         // a is MutableLater<Int>
-val b = a.map { "The number is $it".asLater() }     // b is Later<String>
-val c = b.map { (it.uppercase()+"!").asLater() }    // c is Later<String>
+val a = Later.completable<Int>()                  // a is CompletableLater<Int>
+val b = a.map { "The number is $it".asLater() }   // b is Later<String>
+val c = b.map { (it.uppercase()+"!").asLater() }  // c is Later<String>
 
 // None of the objects have a value yet. Attempting to read `.value` 
 // will throw an exception. But we can assign value to `a`:

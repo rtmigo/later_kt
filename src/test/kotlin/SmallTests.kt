@@ -15,7 +15,7 @@ import kotlin.concurrent.thread
 
 class SmallTests {
     @Test
-    fun twoThen() {
+    fun mapTwice() {
         val a = mutableLater<Int>()
         val b = a.map {
             later(it * 2)
@@ -41,7 +41,7 @@ class SmallTests {
     }
 
     @Test
-    fun thenSuccessChain() {
+    fun mapChain() {
         val a = mutableLater<Int>()
         val b = a.map {
             later(it + 1)
@@ -55,7 +55,7 @@ class SmallTests {
     }
 
     @Test
-    fun thenSuccessTree() {
+    fun mapTree() {
         val a = mutableLater<Int>()
         val b1 = a.map { later(it + 10) }
         val b2 = a.map { later(it + 20) }
@@ -85,7 +85,7 @@ class SmallTests {
     @Test
     fun `cannot read until success`() {
         val a = mutableLater<Int>()
-        shouldThrow<LaterNotCompletedException> { a.value }
+        shouldThrow<LaterUncompletedException> { a.value }
 
         a.value = 1
         a.value
