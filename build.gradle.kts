@@ -71,30 +71,31 @@ val increaseBuildNum = tasks.register("increaseBuildNum") {
     }
 }
 
-val pushToGithub = tasks.register("stage") {
-    dependsOn(increaseBuildNum)
-    doLast {
-        exec {
-            executable = "git"
-            args("add", ".")
-            workingDir = project.rootDir
-        }
-        exec {
-            executable = "git"
-            args("commit", "-m", "Pushing from Gradle")
-            workingDir = project.rootDir
-        }
-        exec {
-            executable = "git"
-            args("push")
-            workingDir = project.rootDir
-        }
-
-        println("Pushed to Git with increased build num")
+fun Task.pushToGithub(message: String = "Pushing from Gradle") {
+    exec {
+        executable = "git"
+        args("add", ".")
+        workingDir = project.rootDir
+    }
+    exec {
+        executable = "git"
+        args("commit", "-m", message)
+        workingDir = project.rootDir
+    }
+    exec {
+        executable = "git"
+        args("push")
+        workingDir = project.rootDir
     }
 }
 
-
+val pushToGithubStaging = tasks.register("stage") {
+    dependsOn(increaseBuildNum)
+    doLast {
+        pushToGithub("Push from Gradle to Dev->Staging")
+        println("Pushed to Git with increased build num")
+    }
+}
 
 tasks.register("updateReadmeVersion") {
     doFirst {
