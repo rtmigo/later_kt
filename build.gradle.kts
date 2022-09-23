@@ -89,8 +89,9 @@ val pushToGithub = tasks.register("stage") {
             args("push")
             workingDir = project.rootDir
         }
+
+        println("Pushed to Git with increased build num")
     }
-    println("Pushed to Git with increased build num")
 }
 
 
