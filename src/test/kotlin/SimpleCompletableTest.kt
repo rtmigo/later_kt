@@ -5,6 +5,7 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 
+@OptIn(Experimental::class)
 class SimpleCompletableTest {
     @Test
     fun completeCompletable() {

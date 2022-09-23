@@ -65,6 +65,54 @@ tasks.test {
 //    description 'run unit tests tagged with @Tag("slow") > 2 seconds'
 //}
 
+fun Task.pushToGithub(message: String = "Pushing from Gradle") {
+    exec {
+        executable = "git"
+        args("add", ".")
+        workingDir = project.rootDir
+    }
+    exec {
+        executable = "git"
+        args("commit", "-m", message)
+        workingDir = project.rootDir
+        isIgnoreExitValue = true
+    }
+    exec {
+        executable = "git"
+        args("push")
+        workingDir = project.rootDir
+    }
+}
+
+val pushToDevAndTestAsDependency = tasks.register("test-dep") {
+
+    pushToGithub("Pushing from Gradle to test as dependency")
+
+    exec {
+        executable = "python3"
+        args("test_as_dependency.py", "dev")
+        workingDir = project.rootDir
+    }
+}
+
+val pushToGithubStaging = tasks.register("stage") {
+
+    dependsOn(fullTest)
+    dependsOn(pushToDevAndTestAsDependency)
+
+    fun increaseBuildNum(filename: String): Int =
+        project.rootDir.resolve(filename).let {
+            val buildNum = it.readText().toInt() + 1
+            it.writeText(buildNum.toString())
+            buildNum
+        }
+
+    doLast {
+        val buildNum = increaseBuildNum(".github/staging_build_num.txt")
+        pushToGithub("Pushing from Gradle with build num $buildNum")
+        println("Pushed to Git with build num $buildNum")
+    }
+}
 
 tasks.register("updateReadmeVersion") {
     doFirst {

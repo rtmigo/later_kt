@@ -10,6 +10,8 @@ url = "https://github.com/rtmigo/later_kt.git"
 
 code = """
     import io.github.rtmigo.later.*
+    
+    @OptIn(io.github.rtmigo.later.Experimental::class)
 
     fun main() {
         println("Am I late?".asLater().await())
@@ -27,7 +29,7 @@ with TempProject(
             "build.gradle.kts": """
                 plugins {
                     id("application")
-                    kotlin("jvm") version "1.6.20"
+                    kotlin("jvm") version "1.7.10"
                 }
 
                 repositories { mavenCentral() }

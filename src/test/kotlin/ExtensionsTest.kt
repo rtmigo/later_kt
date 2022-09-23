@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: MIT
  **/
 
+@file:OptIn(Experimental::class)
+
 import io.github.rtmigo.later.*
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test

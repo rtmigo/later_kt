@@ -13,6 +13,7 @@ import java.lang.Thread.sleep
 import kotlin.concurrent.thread
 
 
+@OptIn(Experimental::class)
 class SmallTests {
     @Test
     fun mapTwice() {

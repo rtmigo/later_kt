@@ -1,5 +1,4 @@
-![Generic badge](https://img.shields.io/badge/maturity-experimental-red.svg)
-![Generic badge](https://img.shields.io/badge/Kotlin-1.6-blue.svg)
+![Generic badge](https://img.shields.io/badge/Kotlin-1.7-blue.svg)
 ![Generic badge](https://img.shields.io/badge/JVM-8-blue.svg)
 
 
@@ -17,7 +16,7 @@ time in the future.
 The object does not provide concurrency or task queuing. It just fires
 callbacks as lightly as possible while being thread safe.
 
-- `later.onComplete { }` runs the block as soon as the value is set
+- `later.onComplete { }` runs the block when value is set
  
 - `later.map` maps the value to other later value
 
