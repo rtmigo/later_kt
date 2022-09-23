@@ -65,12 +65,6 @@ tasks.test {
 //    description 'run unit tests tagged with @Tag("slow") > 2 seconds'
 //}
 
-val increaseBuildNum = tasks.register("increaseBuildNum") {
-    project.rootDir.resolve(".github/staging_build_num.txt").let {
-        it.writeText((it.readText().toInt() + 1).toString())
-    }
-}
-
 fun Task.pushToGithub(message: String = "Pushing from Gradle") {
     exec {
         executable = "git"
@@ -90,16 +84,19 @@ fun Task.pushToGithub(message: String = "Pushing from Gradle") {
 }
 
 val pushToGithubStaging = tasks.register("stage") {
-    dependsOn(increaseBuildNum)
-    doLast {
 
-        val buildNum = project.rootDir.resolve(".github/staging_build_num.txt").let {
+    dependsOn(fullTest)
+
+    fun increaseBuildNum(filename: String): Int =
+        project.rootDir.resolve(filename).let {
             val buildNum = it.readText().toInt() + 1
             it.writeText(buildNum.toString())
             buildNum
         }
 
-        pushToGithub("Push from Gradle with build num $buildNum")
+    doLast {
+        val buildNum = increaseBuildNum(".github/staging_build_num.txt")
+        pushToGithub("Pushing from Gradle with build num $buildNum")
         println("Pushed to Git with build num $buildNum")
     }
 }
