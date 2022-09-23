@@ -1,4 +1,7 @@
-package utils.syncfuture
+/**
+ * SPDX-FileCopyrightText: (c) 2022 Artyom IG <github.com/rtmigo>
+ * SPDX-License-Identifier: MIT
+ **/
 
 import io.github.rtmigo.later.*
 import io.kotest.matchers.shouldBe
@@ -8,7 +11,7 @@ import kotlin.concurrent.thread
 import kotlin.random.Random
 
 @Timeout(2)
-class LaterAwaitTest {
+class AwaitTest {
     @RepeatedTest(50)
     fun awaitOneThread() {
         val future = mutableLater<String>()
@@ -79,6 +82,4 @@ class LaterAwaitTest {
 
         waitingThreads.forEach { it.join() }
     }
-
-
 }

@@ -1,3 +1,8 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2022 Artyom IG <github.com/rtmigo>
+ * SPDX-License-Identifier: MIT
+ **/
+
 package io.github.rtmigo.later
 
 import java.util.concurrent.locks.*

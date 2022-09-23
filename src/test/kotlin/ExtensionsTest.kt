@@ -1,4 +1,7 @@
-package utils.syncfuture
+/**
+ * SPDX-FileCopyrightText: (c) 2022 Artyom IG <github.com/rtmigo>
+ * SPDX-License-Identifier: MIT
+ **/
 
 import io.github.rtmigo.later.*
 import io.kotest.matchers.shouldBe

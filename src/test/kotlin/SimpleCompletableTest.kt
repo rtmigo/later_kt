@@ -1,5 +1,3 @@
-package utils.futures
-
 import io.github.rtmigo.later.*
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.booleans.*
