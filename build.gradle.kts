@@ -92,7 +92,7 @@ val pushToGithub = tasks.register("push") {
         }
         exec {
             executable = "git"
-            args("commit", "push")
+            args("push")
             workingDir = project.rootDir
         }
     }
