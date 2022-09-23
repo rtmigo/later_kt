@@ -1,6 +1,7 @@
 ![Generic badge](https://img.shields.io/badge/Kotlin-1.7-blue.svg)
 ![Generic badge](https://img.shields.io/badge/JVM-8-blue.svg)
 
+:)
 
 # [later](https://github.com/rtmigo/later_kt)
 
