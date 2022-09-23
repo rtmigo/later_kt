@@ -67,7 +67,7 @@ fun main() {
 
 # Creating a Later
 
-`mutableLater<T>()` creates an object without `.value`. The value must be
+`Later.completable<T>()` creates an object without `.value`. The value must be
 assigned before it can be read.
 
 ```kotlin
