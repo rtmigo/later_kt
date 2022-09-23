@@ -10,58 +10,78 @@ import kotlin.concurrent.withLock
 import kotlin.random.Random
 
 class LaterCompletedException : IllegalStateException()
-class LaterNotCompletedException : IllegalStateException()
+class LaterUncompletedException : IllegalStateException()
 
 /**
- * Объект [Later] похож на `Future` из Dart, `Promise` из JS или `Deferred` из Kotlin.
- *
- * Однако, [Later] запускает только синхронные коллбэк-функции, и не имеет никаких централизованных
- * очередей и планировщиков. Это делает вычисление отложенных результатов предельно предсказуемым.
- *
- * Грубые бенчмарки показали, что в случае одного потока [Later] гораздо быстрее (в 10-20 раз), чем
- * `suspending`-функции.
- *
+ * Represents a potential value, that will be available at some
+ * time in the future.
  **/
 interface Later<T> {
-    val isComplete: Boolean
+    /** Returns the value, if it is available.
+     *
+     * Throws [LaterUncompletedException] otherwise. */
     val value: T
 
-    fun <R> thenLet(block: (arg: Later<T>) -> Later<R>): Later<R>
-    fun thenAlso(block: (Later<T>) -> Unit): Later<T>
-    //fun thenApply(block: Later<T>.() -> Unit): Later<T>
+    /**
+     * Returns `true` if this object has a [value] set.
+     **/
+    val isComplete: Boolean
+
+    /**
+     * Transforms future [value] of the current object to another [Later]. This mapping can be set
+     * before we actually receive the value.
+     **/
+    fun <R> map(block: (arg: T) -> Later<R>): Later<R>
+
+    /**
+     * Runs [block] when the [value] becomes available. If the value was available before the
+     * call, run [block] immediately.
+     **/
+    fun onComplete(block: (arg: T) -> Unit): Later<T>
+
+    /**
+     * Blocks the current thread until the [value] is available. Then returns the value.
+     *
+     * If the value was available before the call, just returns the value.
+     **/
     fun await(): T
+
+    companion object
 }
 
-
-interface MutableLater<T> : Later<T> {
+/**
+ * A [Later] with [value] was not initially set.
+ **/
+interface CompletableLater<T> : Later<T> {
+    /** This property can only be set once. Retrying will result in an exception. */
     override var value: T
 }
 
+private typealias LaterCompanion = Later.Companion
 
-fun <T> mutableLater(): MutableLater<T> = LaterImpl<T>(_value = null, _isComplete = false)
+/** Creates a completed [Later] with value [t]. */
+fun <T> LaterCompanion.value(t: T): Later<T> = LaterImpl<T>(_value = t, _isComplete = true)
+
+/** Creates an uncompleted [Later]. The [Later.value] is expected to be set later when it becomes
+ * available. */
+fun <T> LaterCompanion.completable(): CompletableLater<T> =
+    LaterImpl<T>(_value = null, _isComplete = false)
+
+/** Creates a completed [Later] with [this] as value. */
+fun <T> T.asLater(): Later<T> = Later.value(this)
+
+@Deprecated("Obsolete", ReplaceWith("Later.completable<T>()"))
+fun <T> mutableLater(): CompletableLater<T> = LaterCompanion.completable()
+
+@Deprecated("Obsolete", ReplaceWith("Later.completed<T>(v)"))
 fun <T> later(v: T): Later<T> = LaterImpl<T>(_value = v, _isComplete = true)
-fun <T> T.asLater(): Later<T> = later(this)
 
-fun <T, R> Later<T>.map(block: (arg: T) -> Later<R>): Later<R> =
-    this.thenLet { block(it.value) }
-
-fun <T> Later<T>.thenApply(block: Later<T>.() -> Unit): Later<T>
-    = this.thenAlso { it.block() }
-
-//fun <T> Later<T>.thenAlso(block: (Later<T>) -> Unit): Later<T> {
-//    return this.thenApply { block(this) }
-//}
-
-fun <T> Later<T>.onValue(block: (arg: T) -> Unit): Later<T> =
-    this.thenAlso { block(it.value) }
-
-val <T> Later<T>.valueOrNull: T? get() = if (this.isComplete) this.value else null
 
 private typealias Listener = () -> Unit
 
 /**
- * Если установить в `true`, то [LaterImpl] (благодаря [LaterImpl.randomPauseForTesting]) будет делать
- * случайные задержки, помогающие проявить проблемы синхронизации потоков.
+ * Если установить в `true`, то [LaterImpl] (благодаря [LaterImpl.randomPauseForTesting]) будет
+ * делать случайные задержки, помогающие проявить проблемы синхронизации потоков.
  *
  * Это действует только в коде, где разрешены ассерты. В продакшн-коде просто не будет проверок
  * этого условия, и соответственно не будет задержек.
@@ -82,7 +102,7 @@ internal fun withLaterTestingDelays(block: () -> Unit) {
 private class LaterImpl<T> constructor(
     private var _value: T?,
     private var _isComplete: Boolean,
-) : MutableLater<T> {
+) : CompletableLater<T> {
     private fun <R> synced(block: () -> R) = synchronized(this, block)
 
     private val lock = ReentrantLock(false)
@@ -108,6 +128,7 @@ private class LaterImpl<T> constructor(
 
         if (RANDOM_PAUSES_IN_DEBUG_BUILDS)
             Thread.sleep(Random.nextLong(2))
+
         return true
     }
 
@@ -171,25 +192,13 @@ private class LaterImpl<T> constructor(
             this._isComplete = x
         }
 
-    override fun thenAlso(block: (Later<T>) -> Unit): Later<T> {
-        this.addListener { block(this) }
-        return this
-    }
-
-//    override fun thenApply(block: Later<T>.() -> Unit): Later<T> {
-//        this.addListener {
-//            this.block()
-//        }
-//        return this
-//    }
-
     override var value: T
         get() =
             if (this.isComplete)
                 @Suppress("UNCHECKED_CAST")
                 this._value as T
             else
-                throw LaterNotCompletedException()
+                throw LaterUncompletedException()
         set(newValue: T) {
             checkArgs(true, newValue)
 
@@ -260,7 +269,7 @@ private class LaterImpl<T> constructor(
         }
 
     /**
-     * Когда это свойство начинает возвращать `true`, это значит, что метод [thenApply] должен
+     * Когда это свойство начинает возвращать `true`, это значит, что метод [applyLater] должен
      * запускать слушателей моментально, а не ставить их в очередь.
      *
      * Значению `true` можно верить в несинхронизированном коде, а `false` стоит перепроверить
@@ -268,7 +277,6 @@ private class LaterImpl<T> constructor(
      **/
     private val areListenersImmediate
         get() = this.isComplete
-
 
 
     private fun addListener(listener: Listener) {
@@ -294,6 +302,11 @@ private class LaterImpl<T> constructor(
 
     private var listeners: MutableList<Listener>? = null
 
+    override fun onComplete(block: (arg: T) -> Unit): Later<T> {
+        this.addListener { block(this.value) }
+        return this
+    }
+
     /**
      * Трансформирует будущее значение данного объекта [Later] в другой объект [Later].
      *
@@ -304,28 +317,16 @@ private class LaterImpl<T> constructor(
      * future.then { Fut.value(it*2) }
      * ```
      **/
-    override fun <R> thenLet(block: (arg: Later<T>) -> Later<R>): Later<R> {
+    override fun <R> map(block: (arg: T) -> Later<R>): Later<R> {
+        //override fun <R> letLater(block: (arg: Later<T>) -> Later<R>): Later<R> {
         val returnedFuture = LaterImpl<R>(_value = null, _isComplete = false)
-        this.thenApply {
+        this.addListener {
             assert(this@LaterImpl.isComplete)
-            block(this).let { futureFromBlock ->
-                futureFromBlock.thenApply {
-                    returnedFuture.completeByCompleted(futureFromBlock)
-                }
+            block(this.value).let { futureFromBlock ->
+                futureFromBlock.onComplete { returnedFuture.value = it }
             }
         }
         return returnedFuture
-    }
-
-    private fun completeByCompleted(other: Later<T>) {
-        if (other.isComplete) {
-            // Success и Error значат, что other уже финализирован в иммутабельное состояние, и его
-            // поля можно читать без опасений многопоточности
-            this.value = other.value
-        } else {
-            // other не был финализирован к моменту запуска метода, значит не следовало запускать
-            throw IllegalArgumentException("The other Future was not completed")
-        }
     }
 
     companion object {
