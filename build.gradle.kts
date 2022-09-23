@@ -85,9 +85,7 @@ fun Task.pushToGithub(message: String = "Pushing from Gradle") {
 }
 
 val pushToDevAndTestAsDependency = tasks.register("test-dep") {
-
     pushToGithub("Pushing from Gradle to test as dependency")
-
     exec {
         executable = "python3"
         args("test_as_dependency.py", "dev")
@@ -97,8 +95,8 @@ val pushToDevAndTestAsDependency = tasks.register("test-dep") {
 
 val pushToGithubStaging = tasks.register("stage") {
 
-    dependsOn(fullTest)
     dependsOn(pushToDevAndTestAsDependency)
+    dependsOn(fullTest)
 
     fun increaseBuildNum(filename: String): Int =
         project.rootDir.resolve(filename).let {
