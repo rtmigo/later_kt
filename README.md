@@ -8,14 +8,18 @@
 A `Later` represents a potential value, that will be available at some
 time in the future.
 
-- `later.isComplete` returns `true`, if we have the value
+- `later.value` returns the value, or throws if the value is not set yet
 
-- `later.value` returns a value, or throws if we do not have it yet
+- `later.isComplete` returns `true`, if the value is set
 
 - `later.await()` waits until the value is set 
 
 But `Later` does not provide concurrency or task queuing. It just fires
 callbacks as lightly as possible while being thread safe.
+
+- `later.onComplete { }` runs the block as soon as the value is set
+ 
+- `later.map` maps the value to other later value
 
 The object is somewhat similar to 
 [Deferred](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-deferred/), 
