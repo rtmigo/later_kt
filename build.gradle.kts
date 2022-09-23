@@ -92,8 +92,15 @@ fun Task.pushToGithub(message: String = "Pushing from Gradle") {
 val pushToGithubStaging = tasks.register("stage") {
     dependsOn(increaseBuildNum)
     doLast {
-        pushToGithub("Push from Gradle to Dev->Staging")
-        println("Pushed to Git with increased build num")
+
+        val buildNum = project.rootDir.resolve(".github/staging_build_num.txt").let {
+            val buildNum = it.readText().toInt() + 1
+            it.writeText(buildNum.toString())
+            buildNum
+        }
+
+        pushToGithub("Push from Gradle with build num $buildNum")
+        println("Pushed to Git with build num $buildNum")
     }
 }
 
