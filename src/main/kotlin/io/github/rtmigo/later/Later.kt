@@ -202,6 +202,8 @@ private class LaterImpl<T> constructor(
         set(newValue: T) {
             checkArgs(true, newValue)
 
+            //println("Finalizing!")
+
             val listenersToRun = synced {
                 if (!this.isComplete) {
                     // Сначала меняем _value, а потом isComplete. Это позволит даже в
