@@ -46,9 +46,9 @@ jobs:
           distribution: 'adopt'
           cache: gradle
 
-      - name: Warm up gradle
-        # so it will not show "..........10%.." when called again
-        run: ./gradlew pkgver -q
+      #- name: Warm up gradle
+      #  # so it will not show "..........10%.." when called again
+      #  run: ./gradlew pkgver -q
 
       - name: Set up Python 3.10
         uses: actions/setup-python@v2
@@ -58,7 +58,7 @@ jobs:
       - name: Build sample project that uses the library
         run: |
           pip install git+https://github.com/rtmigo/tempp_py
-          python test_as_dependency.py dev
+          python test_as_module_gh.py dev
 
   to-staging:
     needs: [test-unit, test-as-dependency]

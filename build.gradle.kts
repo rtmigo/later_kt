@@ -85,20 +85,18 @@ fun Task.pushToGithub(message: String = "Pushing from Gradle") {
 }
 
 val pushToDevAndTestAsDependency = tasks.register("test-dep") {
-
     pushToGithub("Pushing from Gradle to test as dependency")
-
     exec {
         executable = "python3"
-        args("test_as_dependency.py", "dev")
+        args("test_as_module_gh.py", "dev")
         workingDir = project.rootDir
     }
 }
 
 val pushToGithubStaging = tasks.register("stage") {
 
-    dependsOn(fullTest)
     dependsOn(pushToDevAndTestAsDependency)
+    dependsOn(fullTest)
 
     fun increaseBuildNum(filename: String): Int =
         project.rootDir.resolve(filename).let {
@@ -118,13 +116,19 @@ tasks.register("updateReadmeVersion") {
     doFirst {
         // найдем что-то вроде "io.github.rtmigo:lib:0.0.1"
         // и поменяем на актуальную версию
-        val readmeFile = project.rootDir.resolve("README.md")
+
+        fun File.replaceInText(rx: Regex, replacement: String) {
+            val old = this.readText()
+            val new = rx.replace(old, replacement)
+            if (new != old)
+                this.writeText(new)
+        }
+
         val prefixToFind = "io.github.rtmigo:later:"
-        val regex = """(?<=${Regex.escape(prefixToFind)})[0-9\.+]+""".toRegex()
-        val oldText = readmeFile.readText()
-        val newText = regex.replace(oldText, project.version.toString())
-        if (newText != oldText)
-            readmeFile.writeText(newText)
+        project.rootDir.resolve("README.md").replaceInText(
+            """(?<=${Regex.escape(prefixToFind)})[0-9\.+]+""".toRegex(),
+            project.version.toString()
+        )
     }
 }
 
