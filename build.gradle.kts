@@ -88,7 +88,7 @@ val pushToDevAndTestAsDependency = tasks.register("test-dep") {
     pushToGithub("Pushing from Gradle to test as dependency")
     exec {
         executable = "python3"
-        args("test_as_dependency.py", "dev")
+        args("test_as_module_gh.py", "dev")
         workingDir = project.rootDir
     }
 }

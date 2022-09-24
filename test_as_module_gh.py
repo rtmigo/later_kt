@@ -1,5 +1,4 @@
 import shutil
-import sys
 from pathlib import Path
 
 from tempp import *
@@ -18,8 +17,10 @@ code = """
     }
 """
 
+branch = sys.argv[1]
+
 try:
-    imp_details = """{ version { branch = "__BRANCH__" } }""".replace("__BRANCH__", sys.argv[1])
+    imp_details = """{ version { branch = "__BRANCH__" } }""".replace("__BRANCH__", branch)
 except IndexError:
     imp_details = ""
 
@@ -53,20 +54,25 @@ with TempProject(
             "src/main/kotlin/Main.kt": code}) as app:
     app.print_files()
 
-    shutil.copytree(Path(__file__).parent/"gradle", app.project_dir/"gradle")
-    shutil.copy(Path(__file__).parent/"gradlew", app.project_dir/"gradlew")
-    result = app.run([app.project_dir/"gradlew", "run", "--no-daemon", "-q"])
+    shutil.copytree(Path(__file__).parent / "gradle", app.project_dir / "gradle")
+    shutil.copy(Path(__file__).parent / "gradlew", app.project_dir / "gradlew")
+    gradlew_exe = app.project_dir / "gradlew"
+    app.run([gradlew_exe, "help"])
+    result = app.run([gradlew_exe, "run", "--no-daemon", "-q"])
 
-    print("returncode", result.returncode)
+    print(result)
 
-    print("stderr", "-" * 80)
-    print(result.stderr)
-
-    print("stdout", "-" * 80)
-    print(result.stdout)
-    print("-" * 80)
+    # print("returncode", result.returncode)
+    #
+    # print("stderr", "-" * 80)
+    # print(result.stderr)
+    #
+    # print("stdout", "-" * 80)
+    # print(result.stdout)
+    # print("-" * 80)
 
     assert result.returncode == 0
     assert result.stdout == "Am I late?\n", result.stdout
 
+print()
 print("Everything is OK!")
