@@ -3,8 +3,6 @@
 
 # [later](https://github.com/rtmigo/later_kt)
 
-updated from q 
-
 A `Later` represents a potential value, that will be available at some
 time in the future.
 
