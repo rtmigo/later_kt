@@ -15,6 +15,7 @@ import kotlin.random.Random
 @RequiresOptIn
 annotation class Experimental
 
+class LaterErrorException(val inner: Throwable) : Exception()
 class LaterCompletedException : IllegalStateException()
 class LaterUncompletedException : IllegalStateException()
 
@@ -75,6 +76,10 @@ private typealias LaterCompanion = Later.Companion
 fun <T> LaterCompanion.value(t: T): Later<T> = LaterImpl<T>(
     _value = t, _error = null, _isComplete = true)
 
+/** Creates a completed [Later] with error [e]. */
+fun <T> LaterCompanion.error(e: Throwable): Later<T> = LaterImpl<T>(
+    _value = null, _error = e, _isComplete = true)
+
 /** Creates an uncompleted [Later]. The [Later.value] is expected to be set later when it becomes
  * available. */
 fun <T> LaterCompanion.completable(): CompletableLater<T> =
@@ -83,8 +88,8 @@ fun <T> LaterCompanion.completable(): CompletableLater<T> =
 /** Creates a completed [Later] with [this] as value. */
 fun <T> T.asLater(): Later<T> = Later.value(this)
 
-fun <T> Later<T>.onSuccess(block: (t: T) -> Unit): Later<T>
-    = this.onComplete(ifError = { }, ifSuccess = block)
+fun <T> Later<T>.onSuccess(block: (t: T) -> Unit): Later<T> =
+    this.onComplete(ifError = { }, ifSuccess = block)
 
 @Deprecated("Obsolete", ReplaceWith("Later.completable<T>()"))
 fun <T> mutableLater(): CompletableLater<T> = LaterCompanion.completable()
@@ -198,7 +203,7 @@ private class LaterImpl<T> constructor(
         assert(randomPauseIfTesting())
 
         assert(this.isComplete)
-        return this.value
+        return this.value  // this will throw error, if there is error
     }
 
     override var isComplete: Boolean
@@ -217,8 +222,11 @@ private class LaterImpl<T> constructor(
     override var value: T
         get() =
             if (this.isComplete)
-                @Suppress("UNCHECKED_CAST")
-                this._value as T
+                if (this.isError)
+                    throw LaterErrorException(this.error!!)
+                else
+                    @Suppress("UNCHECKED_CAST")
+                    this._value as T
             else
                 throw LaterUncompletedException()
         set(newValue: T) {
@@ -238,8 +246,6 @@ private class LaterImpl<T> constructor(
 
     private fun complete(newValue: T?, newError: Throwable?) {
         checkArgs(true, newValue, newError)
-
-        //println("Finalizing!")
 
         val listenersToRun = synced {
             if (!this.isComplete) {
@@ -374,25 +380,36 @@ private class LaterImpl<T> constructor(
      * ```
      **/
     override fun <R> map(block: (arg: T) -> Later<R>): Later<R> {
-        //override fun <R> letLater(block: (arg: Later<T>) -> Later<R>): Later<R> {
-        val returnedFuture = LaterImpl<R>(_value = null, _error = null, _isComplete = false)
+        val returnedLater = LaterImpl<R>(_value = null, _error = null, _isComplete = false)
 
         this.onComplete(
             ifError = {
-                returnedFuture.error = it
+                returnedLater.error = it
             },
             ifSuccess = {
                 assert(this@LaterImpl.isComplete)
-                block(this.value).let { futureFromBlock ->
-                    futureFromBlock.onComplete(
-                        ifError = { returnedFuture.error = it },
-                        ifSuccess = { returnedFuture.value = it }
-                    )
-                }
+
+                val mappedLater: Later<R>? =
+                    try {
+                        block(this.value)
+                    } catch (e: Throwable) {
+                        // block(...) throws exception - this means there will be no mapped value
+                        // (the mapped Later results an error).
+                        //
+                        // This does not apply to THIS object: if we have a value, it's ok
+                        returnedLater.error = e
+                        null
+                    }
+
+                // the block generated a new Later for us. We need that Later *only* to update
+                // the Later we returned from `map()`
+                mappedLater?.onComplete(
+                    ifError = { returnedLater.error = it },
+                    ifSuccess = { returnedLater.value = it })
             }
         )
 
-        return returnedFuture
+        return returnedLater
     }
 
     companion object {

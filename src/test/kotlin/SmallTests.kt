@@ -7,6 +7,7 @@ import io.github.rtmigo.later.*
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.booleans.*
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 //import kotlinx.coroutines.*
 import org.junit.jupiter.api.Test
 import java.lang.Thread.sleep
@@ -73,6 +74,52 @@ class SmallTests {
     }
 
     @Test
+    fun mapErrorPropagation() {
+        val a = Later.completable<Int>()
+
+        val goodPathA = a
+            .map { Later.value(it *2) }
+            .map { Later.value(it + 1) }
+            .map { (it*it).asLater() }
+
+        val badPath = a
+            .map { Later.value(it *2) }
+            .map { Later.error<Int>(IllegalArgumentException("Oops")) }
+            .map { Later.value(it + 1) }
+            .map { (it*it).asLater() }
+
+        a.value = 5
+
+        goodPathA.value.shouldBe(121)
+        goodPathA.error.shouldBe(null)
+
+        badPath.error.shouldBeInstanceOf<IllegalArgumentException>()
+    }
+
+    @Test
+    fun mapErrorCatching() {
+        val a = Later.completable<Int>()
+
+        val goodPathA = a
+            .map { Later.value(it *2) }
+            .map { Later.value(it + 1) }
+            .map { (it*it).asLater() }
+
+        val badPath = a
+            .map { Later.value(it *2) }
+            .map<Int> { throw IllegalArgumentException("Oops!") }
+            .map { Later.value(it + 1) }
+            .map { (it*it).asLater() }
+
+        a.value = 5
+
+        goodPathA.value.shouldBe(121)
+        goodPathA.error.shouldBe(null)
+
+        badPath.error.shouldBeInstanceOf<IllegalArgumentException>()
+    }
+
+    @Test
     fun thenSuccessChainX() {
         val a = Later.completable<Int>()
         val b = a.map { Later.value(it + 1) }
@@ -92,22 +139,6 @@ class SmallTests {
         a.value
     }
 
-
-
-
-//    @Test
-//    fun runningSyncFromCoroutines() {
-//        val a = mutableLater<Int>()
-//        val b = a.map { later(it * 2) }
-//
-//        runBlocking {
-//            delay(100)
-//            a.value = 5
-//        }
-//
-//        b.value.shouldBe(10)
-//    }
-
     @Test
     fun withThreads() {
         val a = Later.completable<Int>()
@@ -126,5 +157,36 @@ class SmallTests {
         sleep(100)
         c.isComplete.shouldBeTrue()
         c.value.shouldBe(5)  // 2*2+1
+    }
+
+    @Test
+    fun readingValueWhenThereIsError() {
+        val later = Later.error<Int>(IllegalArgumentException("Oops"))
+        val e = shouldThrow<LaterErrorException> {
+            later.value
+        }
+        e.inner.shouldBeInstanceOf<IllegalArgumentException>()
+    }
+
+    @Test
+    fun awaitingErrorValue() {
+        val later = Later.completable<Int>()
+
+        val chain = later
+            .map { (it*2).asLater() }
+            .map<Int> { throw IllegalArgumentException("Oops") }
+            .map { (it*2).asLater() }
+            .map { (it*2).asLater() }
+
+        thread {
+            later.value = 5
+        }
+
+        val e = shouldThrow<LaterErrorException> {
+            chain.await()
+        }
+
+
+        e.inner.shouldBeInstanceOf<IllegalArgumentException>()
     }
 }
