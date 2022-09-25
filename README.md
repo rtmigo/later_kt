@@ -6,18 +6,19 @@
 A `Later` represents a potential value, that will be available at some
 time in the future.
 
-- `later.value` returns the value, or throws if the value is not set yet
+- `.value` returns the value, or throws if the value is not set yet
 
-- `later.isComplete` returns `true`, if the value is set
+- `.isComplete` returns `true`, if the value is set
 
-- `later.await()` waits until the value is set 
+- `.await()` waits until the value is set 
 
 The object does not provide concurrency or task queuing. It just fires
 callbacks as lightly as possible while being thread safe.
 
-- `later.onComplete { }` runs the block when value is set
+- `.onComplete`, `.onSuccess`, `.onError` set callbacks to be run when Later
+  is completed (or run the callbacks immediately, if Later is already completed)
  
-- `later.map` maps the value to other later value
+- `.map` maps the value to other Later value
 
 The object is somewhat similar to 
 [Deferred](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-deferred/), 
@@ -97,7 +98,7 @@ assert(c.value == 7)
 ```kotlin
 // init
 val a = Later.completable<String>()
-a.onComplete { println("What is $it?!") }
+a.onSuccess { println("What is $it?!") }
 
 // assigning the value will trigger the callback
 a.value = "love"
@@ -109,8 +110,8 @@ We can set multiple callbacks for the same `Later`.
 
 ```kotlin
 val a = Later.completable<String>()
-a.onComplete { println("What is $it?!") }
-a.onComplete { println("Is $it great?!") }
+a.onSuccess { println("What is $it?!") }
+a.onSuccess { println("Is $it great?!") }
 a.value = "Britain"
 
 // What is Britain?
@@ -122,7 +123,7 @@ When value is already set, callbacks are run immediately.
 ```kotlin
 val iam = Later.value("Groot")
 
-a.onComplete { println("You are $it") }
+a.onSuccess { println("You are $it") }
 
 // You are Groot
 ```
@@ -131,7 +132,7 @@ We can use `Unit` as value if all we need is a callback.
 
 ```kotlin
 val kindaEvent = mutableLater<Unit>()
-kindaEvent.onComplete { println("Kinda callback") }
+kindaEvent.onSuccess { println("Kinda callback") }
 
 kindaEvent.value = Unit
 
