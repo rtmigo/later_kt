@@ -43,9 +43,9 @@ class ThreadedOnCompleteTest {
             val t = thread {
                 sleep(Random.nextLong(maxMs))
                 when ((1..3).random()) {
-                    1 -> futureA.onComplete(::handler)
-                    2 -> futureB.onComplete(::handler)
-                    3 -> futureC.onComplete(::handler)
+                    1 -> futureA.onSuccess(::handler)
+                    2 -> futureB.onSuccess(::handler)
+                    3 -> futureC.onSuccess(::handler)
                     else -> throw Error()
                 }
 

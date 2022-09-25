@@ -32,8 +32,8 @@ class SimpleCompletableTest {
         var callsA = 0
         var callsB = 0
 
-        future.onComplete { callsA ++ }
-        future.onComplete { callsB ++ }
+        future.onSuccess { callsA ++ }
+        future.onSuccess { callsB ++ }
         callsA.shouldBe(0)
         callsB.shouldBe(0)
 
@@ -45,7 +45,7 @@ class SimpleCompletableTest {
         // Теперь будущее завершено, но вызывать whenComplete можно.
         // Оно посто выполнится моментально.
         var callsC = 0
-        future.onComplete { callsC ++ }
+        future.onSuccess { callsC ++ }
         callsA.shouldBe(1)
         callsB.shouldBe(1)
         callsC.shouldBe(1)
