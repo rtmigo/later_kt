@@ -22,12 +22,14 @@ class LaterUncompletedException : IllegalStateException()
  * Represents a potential value, that will be available at some
  * time in the future.
  **/
-@io.github.rtmigo.later.Experimental
+@Experimental
 interface Later<T> {
     /** Returns the value, if it is available.
      *
      * Throws [LaterUncompletedException] otherwise. */
     val value: T
+
+    val error: Throwable?
 
     /**
      * Returns `true` if this object has a [value] set.
@@ -44,7 +46,10 @@ interface Later<T> {
      * Runs [block] when the [value] becomes available. If the value was available before the
      * call, run [block] immediately.
      **/
-    fun onComplete(block: (arg: T) -> Unit): Later<T>
+    fun onComplete(
+        ifError: (e: Throwable) -> Unit,
+        ifSuccess: (t: T) -> Unit,
+    ): Later<T>
 
     /**
      * Blocks the current thread until the [value] is available. Then returns the value.
@@ -67,24 +72,31 @@ interface CompletableLater<T> : Later<T> {
 private typealias LaterCompanion = Later.Companion
 
 /** Creates a completed [Later] with value [t]. */
-fun <T> LaterCompanion.value(t: T): Later<T> = LaterImpl<T>(_value = t, _isComplete = true)
+fun <T> LaterCompanion.value(t: T): Later<T> = LaterImpl<T>(
+    _value = t, _error = null, _isComplete = true)
 
 /** Creates an uncompleted [Later]. The [Later.value] is expected to be set later when it becomes
  * available. */
 fun <T> LaterCompanion.completable(): CompletableLater<T> =
-    LaterImpl<T>(_value = null, _isComplete = false)
+    LaterImpl<T>(_value = null, _error = null, _isComplete = false)
 
 /** Creates a completed [Later] with [this] as value. */
 fun <T> T.asLater(): Later<T> = Later.value(this)
 
+fun <T> Later<T>.onSuccess(block: (t: T) -> Unit): Later<T>
+    = this.onComplete(ifError = { }, ifSuccess = block)
+
 @Deprecated("Obsolete", ReplaceWith("Later.completable<T>()"))
 fun <T> mutableLater(): CompletableLater<T> = LaterCompanion.completable()
 
-@Deprecated("Obsolete", ReplaceWith("Later.completed<T>(v)"))
-fun <T> later(v: T): Later<T> = LaterImpl<T>(_value = v, _isComplete = true)
+@Deprecated("Obsolete", ReplaceWith("Later.value<T>(v)"))
+fun <T> later(v: T): Later<T> = LaterImpl<T>(_value = v, _error = null, _isComplete = true)
 
 
-private typealias Listener = () -> Unit
+private data class Resolver<T>(
+    val onError: (Throwable) -> Unit,
+    val onSuccess: (T) -> Unit,
+)
 
 /**
  * Если установить в `true`, то [LaterImpl] (благодаря [LaterImpl.randomPauseIfTesting]) будет
@@ -108,14 +120,15 @@ internal fun withLaterTestingDelays(block: () -> Unit) {
 
 private class LaterImpl<T> constructor(
     private var _value: T?,
+    private var _error: Throwable?,
     private var _isComplete: Boolean,
 ) : CompletableLater<T> {
     private fun <R> synced(block: () -> R) = synchronized(this, block)
 
-    private val lock = ReentrantLock(false)
+    //private val lock = ReentrantLock(false)
 
     init {
-        checkArgs(_isComplete, _value)
+        checkArgs(_isComplete, _value, _error)
     }
 
     // следующий лок мы инициализируем только в случае вызова await
@@ -199,6 +212,8 @@ private class LaterImpl<T> constructor(
             this._isComplete = x
         }
 
+    val isError: Boolean get() = this.error != null
+
     override var value: T
         get() =
             if (this.isComplete)
@@ -207,77 +222,95 @@ private class LaterImpl<T> constructor(
             else
                 throw LaterUncompletedException()
         set(newValue: T) {
-            checkArgs(true, newValue)
-
-            //println("Finalizing!")
-
-            val listenersToRun = synced {
-                if (!this.isComplete) {
-                    // Сначала меняем _value, а потом isComplete. Это позволит даже в
-                    // несинхронизированном коде верить положительному значению isComplete. То есть,
-                    // `if (x.isComplete) x.value else null` не будет требовать synchronized.
-                    // Единственный нюанс в том, что без synchronized объект может быть готов
-                    // возвращать значение чуть раньше, чем isComplete станет сообщать об этой
-                    // готовности
-
-                    this._value = newValue
-
-                    assert(!this.areListenersImmediate)
-                    this.isComplete = true
-                    assert(this.areListenersImmediate)
-
-                    assert(randomPauseIfTesting())
-
-                    // Следующий лок мы устанавливаем в не-null в таком же synchronized-блоке.
-                    // Значениям null и не-null можно верить. А после установки статуса
-                    // isComplete, поле никогда больше не инициализируется в не-null.
-                    this.awaitingLock?.withLock {
-                        assert(randomPauseIfTesting())
-
-                        this.awaitingCondition!!.signalAll()
-
-                        // следующая строчка сообщает методу Later.await(), чтобы не пытался ждать
-                        // awaitingCondition.await() - сигналов не будет. Он проверит значение
-                        // в таком же withLock
-                        this.awaitingCondition = null
-
-                        assert(randomPauseIfTesting())
-                    }
-
-                    assert(randomPauseIfTesting())
-
-                    // Статус isComplete значит что с данного момента последующие вызовы onComplete
-                    // уже не будут обновлять поле listeners.
-                    //
-                    // Все прежние обновления listeners производились с синхронизацией. Поскольку мы
-                    // внутри синхронизированного блока, то значение listeners актуально, и
-                    // обновлено.
-                    //
-                    // Поскольку именно мы установили isComplete (а это можно сделать лишь раз),
-                    // значит это мы запретили списку listeners будущие обновления. Мы можем сейчас
-                    // этим списком эксклюзивно распорядиться.
-                    //
-                    // Устанавливаем список обработчиков в null, чтобы облегчить работу сборщику
-                    // мусора. А сами обработчики возвращаем наружу блока synchronized. Его копия
-                    // есть только у нас, и поэтому далее синхронизация списку необязательна
-
-                    val prevListenersOrNull = this.listeners
-
-                    this.listeners = null
-                    assert(randomPauseIfTesting())
-
-                    prevListenersOrNull
-                } else
-                    throw LaterCompletedException()
-            }
-
-            assert(this.listeners == null)
-            assert(this.areListenersImmediate)
-
-            // listenersToRun может быть null, если таким же было поле listeners, то есть, если
-            // ни один слушатель никогда не был задан
-            listenersToRun?.forEach { it() }
+            complete(newValue, null)
         }
+
+    override var error: Throwable?
+        get() =
+            if (this.isComplete)
+                this._error
+            else
+                throw LaterUncompletedException()
+        set(e) {
+            complete(null, e)
+        }
+
+
+    private fun complete(newValue: T?, newError: Throwable?) {
+        checkArgs(true, newValue, newError)
+
+        //println("Finalizing!")
+
+        val listenersToRun = synced {
+            if (!this.isComplete) {
+                // Сначала меняем _value, а потом isComplete. Это позволит даже в
+                // несинхронизированном коде верить положительному значению isComplete. То есть,
+                // `if (x.isComplete) x.value else null` не будет требовать synchronized.
+                // Единственный нюанс в том, что без synchronized объект может быть готов
+                // возвращать значение чуть раньше, чем isComplete станет сообщать об этой
+                // готовности
+
+                this._value = newValue
+                this._error = newError
+
+                assert(!this.areListenersImmediate)
+                this.isComplete = true
+                assert(this.areListenersImmediate)
+
+                assert(randomPauseIfTesting())
+
+                // Следующий лок мы устанавливаем в не-null в таком же synchronized-блоке.
+                // Значениям null и не-null можно верить. А после установки статуса
+                // isComplete, поле никогда больше не инициализируется в не-null.
+                this.awaitingLock?.withLock {
+                    assert(randomPauseIfTesting())
+
+                    this.awaitingCondition!!.signalAll()
+
+                    // следующая строчка сообщает методу Later.await(), чтобы не пытался ждать
+                    // awaitingCondition.await() - сигналов не будет. Он проверит значение
+                    // в таком же withLock
+                    this.awaitingCondition = null
+
+                    assert(randomPauseIfTesting())
+                }
+
+                assert(randomPauseIfTesting())
+
+                // Статус isComplete значит что с данного момента последующие вызовы onComplete
+                // уже не будут обновлять поле listeners.
+                //
+                // Все прежние обновления listeners производились с синхронизацией. Поскольку мы
+                // внутри синхронизированного блока, то значение listeners актуально, и
+                // обновлено.
+                //
+                // Поскольку именно мы установили isComplete (а это можно сделать лишь раз),
+                // значит это мы запретили списку listeners будущие обновления. Мы можем сейчас
+                // этим списком эксклюзивно распорядиться.
+                //
+                // Устанавливаем список обработчиков в null, чтобы облегчить работу сборщику
+                // мусора. А сами обработчики возвращаем наружу блока synchronized. Его копия
+                // есть только у нас, и поэтому далее синхронизация списку необязательна
+
+                val prevListenersOrNull = this.listeners
+
+                this.listeners = null
+                assert(randomPauseIfTesting())
+
+                prevListenersOrNull
+            } else
+                throw LaterCompletedException()
+        }
+
+        assert(this.listeners == null)
+        assert(this.areListenersImmediate)
+
+        // listenersToRun может быть null, если таким же было поле listeners, то есть, если
+        // ни один слушатель никогда не был задан
+        listenersToRun?.forEach(::runResolver)
+
+    }
+
 
     /**
      * Когда это свойство начинает возвращать `true`, это значит, что метод [applyLater] должен
@@ -290,7 +323,7 @@ private class LaterImpl<T> constructor(
         get() = this.isComplete
 
 
-    private fun addListener(listener: Listener) {
+    private fun addListener(listener: Resolver<T>) {
         val runNowListener = if (this.areListenersImmediate) {
             listener
         } else {
@@ -308,13 +341,25 @@ private class LaterImpl<T> constructor(
                 }
             }
         }
-        runNowListener?.invoke()
+        if (runNowListener != null)
+            runResolver(runNowListener)
+        //runNowListener?.invoke()
     }
 
-    private var listeners: MutableList<Listener>? = null
+    private fun runResolver(r: Resolver<T>) {
+        if (this.isError)
+            r.onError(this.error!!)
+        else
+            r.onSuccess(this.value)
+    }
 
-    override fun onComplete(block: (arg: T) -> Unit): Later<T> {
-        this.addListener { block(this.value) }
+    private var listeners: MutableList<Resolver<T>>? = null
+
+    override fun onComplete(
+        ifError: (arg: Throwable) -> Unit,
+        ifSuccess: (arg: T) -> Unit,
+    ): Later<T> {
+        this.addListener(Resolver<T>(ifError, ifSuccess))
         return this
     }
 
@@ -330,13 +375,23 @@ private class LaterImpl<T> constructor(
      **/
     override fun <R> map(block: (arg: T) -> Later<R>): Later<R> {
         //override fun <R> letLater(block: (arg: Later<T>) -> Later<R>): Later<R> {
-        val returnedFuture = LaterImpl<R>(_value = null, _isComplete = false)
-        this.addListener {
-            assert(this@LaterImpl.isComplete)
-            block(this.value).let { futureFromBlock ->
-                futureFromBlock.onComplete { returnedFuture.value = it }
+        val returnedFuture = LaterImpl<R>(_value = null, _error = null, _isComplete = false)
+
+        this.onComplete(
+            ifError = {
+                returnedFuture.error = it
+            },
+            ifSuccess = {
+                assert(this@LaterImpl.isComplete)
+                block(this.value).let { futureFromBlock ->
+                    futureFromBlock.onComplete(
+                        ifError = { returnedFuture.error = it },
+                        ifSuccess = { returnedFuture.value = it }
+                    )
+                }
             }
-        }
+        )
+
         return returnedFuture
     }
 
@@ -344,9 +399,10 @@ private class LaterImpl<T> constructor(
         private fun <T> checkArgs(
             isComplete: Boolean,
             value: T?,
+            error: Throwable?,
         ) {
-            if (value != null && !isComplete)
-                throw IllegalArgumentException()
+            if (value != null || error != null)
+                require(isComplete)
         }
     }
 }

@@ -15,7 +15,7 @@ class ExtensionsTest {
         val f = Later.completable<Int>()
         var runs = 0
 
-        f.onComplete {
+        f.onSuccess {
             it.shouldBe(5)
             runs++
         }.shouldBe(f)
