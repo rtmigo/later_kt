@@ -25,11 +25,17 @@ class LaterUncompletedException : IllegalStateException()
  **/
 @Experimental
 interface Later<T> {
-    /** Returns the value, if it is available.
+    /**
+     * Returns the value, if it is available.
      *
-     * Throws [LaterUncompletedException] otherwise. */
+     * Throws [LaterUncompletedException] if [isComplete] is `false`.
+     *
+     * Throws [LaterErrorException] if [isError] is `true`.
+     *
+     **/
     val value: T
 
+    /**  */
     val error: Throwable?
 
     /**
@@ -90,6 +96,11 @@ fun <T> T.asLater(): Later<T> = Later.value(this)
 
 fun <T> Later<T>.onSuccess(block: (t: T) -> Unit): Later<T> =
     this.onComplete(ifError = { }, ifSuccess = block)
+
+fun <T> Later<T>.onError(block: (e: Throwable) -> Unit): Later<T> =  // TODO unit-test
+    this.onComplete(ifError = block, ifSuccess = { })
+
+val Later<*>.isError: Boolean get() = this.error != null
 
 @Deprecated("Obsolete", ReplaceWith("Later.completable<T>()"))
 fun <T> mutableLater(): CompletableLater<T> = LaterCompanion.completable()
@@ -217,8 +228,6 @@ private class LaterImpl<T> constructor(
             this._isComplete = x
         }
 
-    val isError: Boolean get() = this.error != null
-
     override var value: T
         get() =
             if (this.isComplete)
@@ -314,7 +323,6 @@ private class LaterImpl<T> constructor(
         // listenersToRun может быть null, если таким же было поле listeners, то есть, если
         // ни один слушатель никогда не был задан
         listenersToRun?.forEach(::runResolver)
-
     }
 
 
@@ -349,7 +357,6 @@ private class LaterImpl<T> constructor(
         }
         if (runNowListener != null)
             runResolver(runNowListener)
-        //runNowListener?.invoke()
     }
 
     private fun runResolver(r: Resolver<T>) {
