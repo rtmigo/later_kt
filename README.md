@@ -8,7 +8,7 @@ time in the future.
 
 - `.value` returns the value, or throws if the value is not set yet
 
-- `.isComplete` returns `true`, if the value is set
+- `.isCompleted` returns `true`, if the value is set
 
 - `.await()` waits until the value is set 
 
@@ -24,6 +24,7 @@ The object is somewhat similar to
 [Deferred](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-deferred/), 
 [Future](https://api.dart.dev/be/175791/dart-async/Future-class.html) and
 [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise).
+
 
 # Install
 
@@ -75,11 +76,11 @@ assigned before it can be read.
 
 ```kotlin
 val a = Later.completable<Int>()
-assert(a.isComplete == false)
+assert(a.isCompleted == false)
 
 a.value = 5
 
-assert(a.isComplete == true)
+assert(a.isCompleted == true)
 assert(a.value == 5)
 ```
 
@@ -89,7 +90,7 @@ with `v` as value.
 ```kotlin
 val c = Later.value(7)
 
-assert(c.isComplete == true)
+assert(c.isCompleted == true)
 assert(c.value == 7)
 ```
 

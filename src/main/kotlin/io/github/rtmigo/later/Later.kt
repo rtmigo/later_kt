@@ -28,7 +28,7 @@ interface Later<T> {
     /**
      * Returns the value, if it is available.
      *
-     * Throws [LaterUncompletedException] if [isComplete] is `false`.
+     * Throws [LaterUncompletedException] if [isCompleted] is `false`.
      *
      * Throws [LaterErrorException] if [isError] is `true`.
      *
@@ -41,7 +41,7 @@ interface Later<T> {
     /**
      * Returns `true` if this object has a [value] set.
      **/
-    val isComplete: Boolean
+    val isCompleted: Boolean
 
     /**
      * Transforms future [value] of the current object to another [Later]. This mapping can be set
@@ -169,14 +169,14 @@ private class LaterImpl<T> constructor(
     }
 
     override fun await(): T {
-        if (isComplete)
+        if (isCompleted)
             return this.value
         else {
             assert(randomPauseIfTesting())
 
             synced {
                 assert(randomPauseIfTesting())
-                if (!isComplete && awaitingLock == null) {
+                if (!isCompleted && awaitingLock == null) {
                     awaitingLock = ReentrantLock()
                     assert(randomPauseIfTesting())
                     awaitingCondition = awaitingLock!!.newCondition()
@@ -187,9 +187,9 @@ private class LaterImpl<T> constructor(
             assert(randomPauseIfTesting())
 
             // Здесь awaitingLock может по-прежнему быть null. Но только в случае, если в прошлом
-            // синхроблоке мы обнаружили, что объект уже isComplete. Он уже не перестанет быть
-            // isComplete в таком случае
-            assert(isComplete || awaitingLock != null)
+            // синхроблоке мы обнаружили, что объект уже isCompleted. Он уже не перестанет быть
+            // isCompleted в таком случае
+            assert(isCompleted || awaitingLock != null)
 
             awaitingLock?.withLock {
                 assert(randomPauseIfTesting())
@@ -200,7 +200,7 @@ private class LaterImpl<T> constructor(
                 // Чтобы дать подсказку, что финализер уже отстрелялся, он устанавливает
                 // awaitingCondition в null, причём внутри такого же withLock
 
-                if (this.isComplete || this.awaitingCondition == null)
+                if (this.isCompleted || this.awaitingCondition == null)
                     return this.value
                 else
                     this.awaitingCondition!!.await()
@@ -213,11 +213,11 @@ private class LaterImpl<T> constructor(
 
         assert(randomPauseIfTesting())
 
-        assert(this.isComplete)
+        assert(this.isCompleted)
         return this.value  // this will throw error, if there is error
     }
 
-    override var isComplete: Boolean
+    override var isCompleted: Boolean
         get() = _isComplete
         private set(x) {
             // мы можем только один раз заменить null на что-то другое
@@ -230,7 +230,7 @@ private class LaterImpl<T> constructor(
 
     override var value: T
         get() =
-            if (this.isComplete)
+            if (this.isCompleted)
                 if (this.isError)
                     throw LaterErrorException(this.error!!)
                 else
@@ -244,7 +244,7 @@ private class LaterImpl<T> constructor(
 
     override var error: Throwable?
         get() =
-            if (this.isComplete)
+            if (this.isCompleted)
                 this._error
             else
                 throw LaterUncompletedException()
@@ -257,26 +257,26 @@ private class LaterImpl<T> constructor(
         checkArgs(true, newValue, newError)
 
         val listenersToRun = synced {
-            if (!this.isComplete) {
-                // Сначала меняем _value, а потом isComplete. Это позволит даже в
-                // несинхронизированном коде верить положительному значению isComplete. То есть,
-                // `if (x.isComplete) x.value else null` не будет требовать synchronized.
+            if (!this.isCompleted) {
+                // Сначала меняем _value, а потом isCompleted. Это позволит даже в
+                // несинхронизированном коде верить положительному значению isCompleted. То есть,
+                // `if (x.isCompleted) x.value else null` не будет требовать synchronized.
                 // Единственный нюанс в том, что без synchronized объект может быть готов
-                // возвращать значение чуть раньше, чем isComplete станет сообщать об этой
+                // возвращать значение чуть раньше, чем isCompleted станет сообщать об этой
                 // готовности
 
                 this._value = newValue
                 this._error = newError
 
                 assert(!this.areListenersImmediate)
-                this.isComplete = true
+                this.isCompleted = true
                 assert(this.areListenersImmediate)
 
                 assert(randomPauseIfTesting())
 
                 // Следующий лок мы устанавливаем в не-null в таком же synchronized-блоке.
                 // Значениям null и не-null можно верить. А после установки статуса
-                // isComplete, поле никогда больше не инициализируется в не-null.
+                // isCompleted, поле никогда больше не инициализируется в не-null.
                 this.awaitingLock?.withLock {
                     assert(randomPauseIfTesting())
 
@@ -292,14 +292,14 @@ private class LaterImpl<T> constructor(
 
                 assert(randomPauseIfTesting())
 
-                // Статус isComplete значит что с данного момента последующие вызовы onComplete
+                // Статус isCompleted значит что с данного момента последующие вызовы onComplete
                 // уже не будут обновлять поле listeners.
                 //
                 // Все прежние обновления listeners производились с синхронизацией. Поскольку мы
                 // внутри синхронизированного блока, то значение listeners актуально, и
                 // обновлено.
                 //
-                // Поскольку именно мы установили isComplete (а это можно сделать лишь раз),
+                // Поскольку именно мы установили isCompleted (а это можно сделать лишь раз),
                 // значит это мы запретили списку listeners будущие обновления. Мы можем сейчас
                 // этим списком эксклюзивно распорядиться.
                 //
@@ -334,7 +334,7 @@ private class LaterImpl<T> constructor(
      * после синхронизации.
      **/
     private val areListenersImmediate
-        get() = this.isComplete
+        get() = this.isCompleted
 
 
     private fun addListener(listener: Resolver<T>) {
@@ -379,7 +379,7 @@ private class LaterImpl<T> constructor(
     /**
      * Трансформирует будущее значение данного объекта [Later] в другой объект [Later].
      *
-     * [block] запускается, когда данный объект получает статус [isComplete]. Если статус уже такой,
+     * [block] запускается, когда данный объект получает статус [isCompleted]. Если статус уже такой,
      * то запуск происходит сразу.
      *
      * ```kotlin
@@ -394,7 +394,7 @@ private class LaterImpl<T> constructor(
                 returnedLater.error = it
             },
             ifSuccess = {
-                assert(this@LaterImpl.isComplete)
+                assert(this@LaterImpl.isCompleted)
 
                 val mappedLater: Later<R>? =
                     try {
@@ -421,12 +421,12 @@ private class LaterImpl<T> constructor(
 
     companion object {
         private fun <T> checkArgs(
-            isComplete: Boolean,
+            isCompleted: Boolean,
             value: T?,
             error: Throwable?,
         ) {
             if (value != null || error != null)
-                require(isComplete)
+                require(isCompleted)
         }
     }
 }
