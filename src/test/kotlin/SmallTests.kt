@@ -27,15 +27,15 @@ class SmallTests {
             Later.value(it.toString() + it.toString() + it.toString())
         }
 
-        a.isComplete.shouldBeFalse()
-        b.isComplete.shouldBeFalse()
-        c.isComplete.shouldBeFalse()
+        a.isCompleted.shouldBeFalse()
+        b.isCompleted.shouldBeFalse()
+        c.isCompleted.shouldBeFalse()
 
         a.value = 5
 
-        a.isComplete.shouldBeTrue()
-        b.isComplete.shouldBeTrue()
-        c.isComplete.shouldBeTrue()
+        a.isCompleted.shouldBeTrue()
+        b.isCompleted.shouldBeTrue()
+        c.isCompleted.shouldBeTrue()
 
         a.value.shouldBe(5)
         b.value.shouldBe(10)
@@ -153,9 +153,9 @@ class SmallTests {
         val c = b.map { Later.value(it + 1) }
 
         a.value = 2
-        c.isComplete.shouldBeFalse()
+        c.isCompleted.shouldBeFalse()
         sleep(100)
-        c.isComplete.shouldBeTrue()
+        c.isCompleted.shouldBeTrue()
         c.value.shouldBe(5)  // 2*2+1
     }
 

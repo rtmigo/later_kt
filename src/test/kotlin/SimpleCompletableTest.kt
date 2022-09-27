@@ -10,9 +10,9 @@ class SimpleCompletableTest {
     @Test
     fun completeCompletable() {
         val c = Later.completable<Int>()
-        c.isComplete.shouldBeFalse()
+        c.isCompleted.shouldBeFalse()
         c.value = 5
-        c.isComplete.shouldBeTrue()
+        c.isCompleted.shouldBeTrue()
         c.value.shouldBe(5)
     }
 
